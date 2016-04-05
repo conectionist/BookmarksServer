@@ -13,7 +13,7 @@ requestHandler = RequestHandler()
 
 @app.route('/')
 def index():
-    return time.strftime("%c");
+    return time.strftime("%c")
 
 @app.route('/bookmarks')
 def bookmarks():
@@ -32,11 +32,12 @@ def bookmarks():
         return "Y u no give tags?"
     else:
         try:
-            requestHandler.HandleBookmarkRequest(link, tags, user);
-            return '{} with the corresponding tags ({}) have been saved to the database'.format(link, tags);
+            requestHandler.HandleBookmarkRequest(link, tags, user)
+            return '{} with the corresponding tags ({}) have been saved to the database'.format(link, tags)
         except BaseException as ex:
             print ex
             return "There was an error. The hamsters have gone mad.";
+
 
 @app.route('/bookmarks/login', methods=['POST'])
 def bookmarks_login():

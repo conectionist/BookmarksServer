@@ -27,11 +27,11 @@ class RequestHandler:
 
         query = """
             insert into {}({})
-            values('{}')
-            """.format(table, column, entry)
+            values(%s)
+            """.format(table, column)
 
         try:
-            self.db.insert(query)
+            self.db.insert(query, (entry,))
 
         except MySQLdb.Error as ex:
             if ex.args[0] == 1062:
@@ -84,10 +84,10 @@ class RequestHandler:
         select_query1 = """
                    SELECT id
                    FROM {}
-                   WHERE {} = '{}'
-                   """.format(table1, column1, value1)
+                   WHERE {} = %s
+                   """.format(table1, column1)
 
-        ids_list1 = self.db.query(select_query1)
+        ids_list1 = self.db.query(select_query1, (value1,))
 
         id1 = ids_list1[0]['id']
 
@@ -95,22 +95,22 @@ class RequestHandler:
         select_query2 = """
                    SELECT id
                    FROM {}
-                   WHERE {} = '{}'
-                   """.format(table2, column2, value2)
+                   WHERE {} = %s
+                   """.format(table2, column2)
 
-        ids_list2 = self.db.query(select_query2)
+        ids_list2 = self.db.query(select_query2, (value2,))
 
         id2 = ids_list2[0]['id']
 
         # insert operation
         query = """
                 insert into {}
-                values({},{})
-                """.format(table, id1, id2)
+                values(%s,%s)
+                """.format(table)
 
         try:
             print "Running query: \n" + query
-            self.db.insert(query)
+            self.db.insert(query, (id1, id2))
 
         except MySQLdb.Error as ex:
             if ex.args[0] == 1062:
@@ -154,14 +154,17 @@ class RequestHandler:
         select_query = """
             SELECT parola
             FROM users
-            WHERE nume = '{}'
-            """.format(username)
+            WHERE nume = %s
+            """
 
-        passwords = self.db.query(select_query)
+        print "login query:"
+        print select_query
+
+        passwords = self.db.query(select_query, (username,))
         if 0 == len(passwords):
             raise BaseException("Username not found")
 
         pwd = passwords[0]['parola']
 
         if pwd != password:
-            raise BaseException("Invalid password");
+            raise BaseException("Invalid password")

@@ -5,6 +5,7 @@ from RequestParser import RequestParser
 from RequestHandler import RequestHandler
 import urllib
 from Logger import Logger
+from Exceptions import InvalidParameterException
 
 app = Flask(__name__)
 parser = RequestParser()
@@ -31,19 +32,17 @@ def bookmarks():
     if user is None:
         user = 'dan'
 
-    if link is None:
-        return "We were promised links"
-    elif title is None:
-        return "No page title?"
-    elif tags is None:
-        return "Y u no give tags?"
-    else:
-        try:
-            requestHandler.handle_bookmark_request(link, title, tags, user)
-            return '{} with the corresponding tags ({}) have been saved to the database'.format(link, tags)
-        except BaseException as ex:
-            log.debug(ex.message)
-            return "There was an error. The hamsters have gone mad.";
+    try:
+        validate_bookmark_parameters(link, title, tags)
+
+        requestHandler.handle_bookmark_request(link, title, tags, user)
+        return '{} with the corresponding tags ({}) have been saved to the database'.format(link, tags)
+    except InvalidParameterException as ipx:
+        log.debug(ipx.get_message())
+        return ipx.get_message()
+    except BaseException as ex:
+        log.debug(ex.message)
+        return "There was an error. The hamsters have gone mad."
 
 
 @app.route('/bookmarks/login', methods=['POST'])
@@ -54,18 +53,34 @@ def bookmarks_login():
     username = request.form.get('username')
     password = request.form.get('password')
 
+    try:
+        validate_login_params(username, password)
+
+        log.debug("User login: " + username + " Pass: " + password)
+        requestHandler.handle_login_request(username, password)
+        return "Welcome " + username
+    except InvalidParameterException as ipx:
+        log.debug(ipx.get_message())
+        return ipx.get_message()
+    except BaseException as ex:
+        log.debug(ex.message)
+        return ex.message
+
+
+def validate_login_params(username, password):
     if username is None:
-        return "Username is null"
+        raise InvalidParameterException("Username is null")
     elif password is None:
-        return "Password is empty"
-    else:
-        try:
-            log.debug("User login: " + username + " Pass: " + password)
-            requestHandler.handle_login_request(username, password)
-            return "Welcome " + username
-        except BaseException as ex:
-            log.debug(ex.message)
-            return ex.message;
+        raise InvalidParameterException("Password is empty")
+
+
+def validate_bookmark_parameters(link, title, tags):
+    if link is None:
+        raise InvalidParameterException("We were promised links")
+    elif title is None:
+        raise InvalidParameterException("No page title?")
+    elif tags is None:
+        raise InvalidParameterException("Y u no give tags?")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)

@@ -1,166 +1,32 @@
 from RequestParser import RequestParser
-from Database import Database
-import MySQLdb
+from DatabaseManager import DatabaseManager
+from Logger import Logger
+
+log = Logger().logger
 
 
 class RequestHandler:
     def __init__(self):
         self.requestParser = RequestParser()
-        self.db = Database()
+        self.dbmgr = DatabaseManager()
 
-    def save_entry(self, entry, entry_type):
-        table = ""
-        column = ""
+    def save_bookmark_to_database(self, link, title, tags, user):
+        self.dbmgr.save_link(link, title)
 
-        if entry_type == 'user':
-            table = 'users'
-            column = 'nume'
-        elif entry_type == 'link':
-            table = 'links'
-            column = 'link'
-        elif entry_type == 'tag':
-            table = 'tags'
-            column = 'nume'
-        else:
-            print "save_entry: Got invalid entry type: " + entry_type
-            return
+        for tag in tags:
+            self.dbmgr.save_tag(tag)
 
-        query = """
-            insert into {}({})
-            values(%s)
-            """.format(table, column)
+        self.dbmgr.create_user_link(user, link)
+        self.dbmgr.create_link_tag_association(link, tag)
 
-        try:
-            self.db.insert(query, (entry,))
+    def handle_bookmark_request(self, link, title, tags, user):
+        tags_list = self.requestParser.getTags(tags)
 
-        except MySQLdb.Error as ex:
-            if ex.args[0] == 1062:
-                print ex.args[1]
-            else:
-                print "Failed to perform db insert operation. Ex:"
-                print ex
-
-    def create_association_entry(self, entity1, entity2, table, value1, value2):
-        table1 = ""
-        column1 = ""
-        fk1 = ""
-        table2 = ""
-        column2 = ""
-        fk2 = ""
-
-        if entity1 == 'user':
-            table1 = "users"
-            column1 = "nume"
-            fk1 = "user_id"
-        elif entity1 == 'link':
-            table1 = "links"
-            column1 = "link"
-            fk1 = "link_id"
-        elif entity1 == 'tag':
-            table1 = "tags"
-            column1 = "nume"
-            fk1 = "tag_id"
-        else:
-            print "create_association_entry: Got invalid entity: " + entity1
-            return
-
-        if entity2 == 'user':
-            table2 = "users"
-            column2 = "nume"
-            fk2 = "user_id"
-        elif entity2 == 'link':
-            table2 = "links"
-            column2 = "link"
-            fk2 = "link_id"
-        elif entity2 == 'tag':
-            table2 = "tags"
-            column2 = "nume"
-            fk2 = "tag_id"
-        else:
-            print "create_association_entry: Got invalid entity: " + entity2
-            return
-
-        # first query
-        select_query1 = """
-                   SELECT id
-                   FROM {}
-                   WHERE {} = %s
-                   """.format(table1, column1)
-
-        ids_list1 = self.db.query(select_query1, (value1,))
-
-        id1 = ids_list1[0]['id']
-
-        # second query
-        select_query2 = """
-                   SELECT id
-                   FROM {}
-                   WHERE {} = %s
-                   """.format(table2, column2)
-
-        ids_list2 = self.db.query(select_query2, (value2,))
-
-        id2 = ids_list2[0]['id']
-
-        # insert operation
-        query = """
-                insert into {}
-                values(%s,%s)
-                """.format(table)
-
-        try:
-            print "Running query: \n" + query
-            self.db.insert(query, (id1, id2))
-
-        except MySQLdb.Error as ex:
-            if ex.args[0] == 1062:
-                print ex.args[1]
-            else:
-                print "Failed to perform db insert operation. Ex:"
-                print ex
-
-    def save_link(self, link):
-        self.save_entry(link, "link")
-
-    def save_user(self, user):
-        self.save_entry(user, "user")
-
-    def save_tag(self, tag):
-        self.save_entry(tag, "tag")
-
-    def create_user_link(self, user, link):
-        self.create_association_entry('link', 'user', 'UserLinks', link, user)
-
-    def create_link_tag_association(self, link, tag):
-        self.create_association_entry('link', 'tag', 'LinksTagAssociation', link, tag)
-
-    def SaveBookmarkToDatabase(self, link, tagsList, user):
-        #self.save_user(user)
-        self.save_link(link)
-
-        for tag in tagsList:
-            self.save_tag(tag)
-
-        self.create_user_link(user, link)
-        self.create_link_tag_association(link, tag)
-
-    def HandleBookmarkRequest(self, link, tags, user):
-        tagsList = self.requestParser.getTags(tags)
-
-        self.SaveBookmarkToDatabase(link, tagsList, user)
-        print "Saved {} with tags '{}' for user '{}'".format(link, tags, user)
+        self.save_bookmark_to_database(link, title, tags_list, user)
+        log.debug("Saved {} with title '{}' and tags '{}' for user '{}'".format(link, title, tags, user))
 
     def handle_login_request(self, username, password):
-        select_query = """
-            SELECT parola
-            FROM users
-            WHERE nume = %s
-            """
-
-        print "login query:"
-        print select_query
-
-        passwords = self.db.query(select_query, (username,))
+        passwords = self.dbmgr.get_password_for_user(username)
         if 0 == len(passwords):
             raise BaseException("Username not found")
 

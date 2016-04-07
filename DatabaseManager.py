@@ -2,7 +2,7 @@ from Database import Database
 import MySQLdb
 from Logger import Logger
 
-log = Logger().logger
+log = Logger.get_instance().logger
 
 
 class DatabaseManager:

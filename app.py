@@ -10,7 +10,7 @@ from Exceptions import InvalidParameterException
 app = Flask(__name__)
 parser = RequestParser()
 requestHandler = RequestHandler()
-log = Logger().logger
+log = Logger.get_instance().logger
 
 
 @app.route('/')
@@ -36,7 +36,11 @@ def bookmarks():
         validate_bookmark_parameters(link, title, tags)
 
         requestHandler.handle_bookmark_request(link, title, tags, user)
-        return '{} with the corresponding tags ({}) have been saved to the database'.format(link, tags)
+
+        answer = '{} with the corresponding tags ({}) have been saved to the database'.format(link, tags)
+        log.debug(answer)
+
+        return answer
     except InvalidParameterException as ipx:
         log.debug(ipx.get_message())
         return ipx.get_message()

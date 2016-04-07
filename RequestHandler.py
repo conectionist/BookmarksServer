@@ -2,7 +2,7 @@ from RequestParser import RequestParser
 from DatabaseManager import DatabaseManager
 from Logger import Logger
 
-log = Logger().logger
+log = Logger.get_instance().logger
 
 
 class RequestHandler:
@@ -23,7 +23,6 @@ class RequestHandler:
         tags_list = self.requestParser.getTags(tags)
 
         self.save_bookmark_to_database(link, title, tags_list, user)
-        log.debug("Saved {} with title '{}' and tags '{}' for user '{}'".format(link, title, tags, user))
 
     def handle_login_request(self, username, password):
         passwords = self.dbmgr.get_password_for_user(username)

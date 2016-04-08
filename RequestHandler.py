@@ -15,9 +15,9 @@ class RequestHandler:
 
         for tag in tags:
             self.dbmgr.save_tag(tag)
+            self.dbmgr.create_link_tag_association(link, tag)
 
         self.dbmgr.create_user_link(user, link)
-        self.dbmgr.create_link_tag_association(link, tag)
 
     def handle_bookmark_request(self, link, title, tags, user):
         tags_list = self.requestParser.getTags(tags)

@@ -1,11 +1,16 @@
 from flask import Flask
 from flask import request
+from flask import render_template
+from flask import make_response
+
 import time
+import urllib
+
 from RequestParser import RequestParser
 from RequestHandler import RequestHandler
-import urllib
 from Logger import Logger
 from Exceptions import InvalidParameterException
+import Utils
 
 app = Flask(__name__)
 parser = RequestParser()
@@ -15,7 +20,17 @@ log = Logger.get_instance().logger
 
 @app.route('/')
 def index():
-    return time.strftime("%c")
+    username = request.cookies.get('username')
+
+    if username is None:
+        return "Not logged in"
+    else:
+        return "Hello, {}!<br><br> The time is {}".format(username, time.strftime("%c"))
+
+
+@app.route('/bookmarks/login')
+def login():
+    return render_template('login.html')
 
 
 @app.route('/bookmarks')
@@ -49,8 +64,8 @@ def bookmarks():
         return "There was an error. The hamsters have gone mad."
 
 
-@app.route('/bookmarks/login', methods=['POST'])
-def bookmarks_login():
+@app.route('/bookmarks/auth', methods=['POST'])
+def bookmarks_auth():
     log.debug('received new login request:')
     log.debug(request)
 
@@ -62,7 +77,13 @@ def bookmarks_login():
 
         log.debug("User login: " + username + " Pass: " + password)
         requestHandler.handle_login_request(username, password)
-        return "Welcome " + username
+
+        resp = make_response(render_template('welcome.html', username = username))
+        log.debug("expiration date: ")
+        log.debug(Utils.get_default_cookie_expiration_date())
+        resp.set_cookie('username', value=username, expires=Utils.get_default_cookie_expiration_date())
+        return resp
+
     except InvalidParameterException as ipx:
         log.debug(ipx.get_message())
         return ipx.get_message()

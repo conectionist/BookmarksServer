@@ -20,10 +20,15 @@ log = Logger.get_instance().logger
 
 @app.route('/')
 def index():
+    return time.strftime("%c")
+
+
+@app.route('/bookmarks')
+def bookmarks():
     username = request.cookies.get('username')
 
     if username is None:
-        return "Not logged in"
+        return authentication_required(None)
     else:
         return "Hello, {}!<br><br> The time is {}".format(username, time.strftime("%c"))
 
@@ -33,8 +38,8 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/bookmarks')
-def bookmarks():
+@app.route('/bookmarks/create')
+def bookmarks_create():
     log.debug('received new bookmark request:')
     log.debug(request)
     link = request.args.get('link')
@@ -78,18 +83,16 @@ def bookmarks_auth():
         log.debug("User login: " + username + " Pass: " + password)
         requestHandler.handle_login_request(username, password)
 
-        resp = make_response(render_template('welcome.html', username = username))
-        log.debug("expiration date: ")
-        log.debug(Utils.get_default_cookie_expiration_date())
+        resp = make_response(render_template('welcome.html', username=username), 200)
         resp.set_cookie('username', value=username, expires=Utils.get_default_cookie_expiration_date())
         return resp
 
     except InvalidParameterException as ipx:
         log.debug(ipx.get_message())
-        return ipx.get_message()
+        return authentication_required(None)
     except BaseException as ex:
         log.debug(ex.message)
-        return ex.message
+        return authentication_required(None)
 
 
 def validate_login_params(username, password):
@@ -106,6 +109,24 @@ def validate_bookmark_parameters(link, title, tags):
         raise InvalidParameterException("No page title?")
     elif tags is None:
         raise InvalidParameterException("Y u no give tags?")
+
+
+@app.errorhandler(200)
+def success(error):
+    resp = make_response(render_template('200.html'), 200)
+    return resp
+
+
+@app.errorhandler(401)
+def authentication_required(error):
+    resp = make_response(render_template('401.html'), 401)
+    return resp
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    resp = make_response(render_template('404.html'), 404)
+    return resp
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)

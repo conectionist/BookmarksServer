@@ -35,7 +35,7 @@ def bookmarks():
 
 @app.route('/bookmarks/login')
 def login():
-    return render_template('login.html')
+    return make_response(render_template('login.html'), 200)
 
 
 @app.route('/bookmarks/create')

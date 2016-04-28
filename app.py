@@ -30,6 +30,8 @@ def bookmarks():
     if username is None:
         return authentication_required(None)
     else:
+        ceva = requestHandler.handle_get_bookmark_request(username)
+        print ceva
         return "Hello, {}!<br><br> The time is {}".format(username, time.strftime("%c"))
 
 
@@ -55,7 +57,7 @@ def bookmarks_create():
     try:
         validate_bookmark_parameters(link, title, tags)
 
-        requestHandler.handle_bookmark_request(link, title, tags, user)
+        requestHandler.handle_create_bookmark_request(link, title, tags, user)
 
         answer = '{} with the corresponding tags ({}) have been saved to the database'.format(link, tags)
         log.debug(answer)

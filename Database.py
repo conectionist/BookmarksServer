@@ -26,5 +26,19 @@ class Database:
 
         return cursor.fetchall()
 
+    def call_procedure(self, proc_name, params):
+        try:
+            self.cursor.callproc(proc_name, params)
+            self.connection.commit()
+        except MySQLdb.Error as ex:
+            self.connection.rollback()
+            raise ex
+
+    def call_procedure_and_return_results(self, proc_name, params):
+        try:
+            return self.cursor.callproc(proc_name, params)
+        except MySQLdb.Error as ex:
+            raise ex
+
     def __del__(self):
         self.connection.close()

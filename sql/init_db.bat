@@ -1,1 +1,0 @@
-mysql -uroot -pparola bookmarks < procedures.sql

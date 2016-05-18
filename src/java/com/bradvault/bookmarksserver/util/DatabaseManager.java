@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -48,9 +49,36 @@ public class DatabaseManager {
         
     }
     
-    public String getPasswordOfUser(String username)
+    public String getPasswordOfUser(String username) throws SQLException
     {
-        return "";
+        ResultSet rs = null;
+        String password = "";
+        
+        try
+        {            
+            CallableStatement stmt = null;
+            String query = "{ call get_user_password(?) }";
+
+            stmt = db.getConnection().prepareCall(query);
+            stmt.setString(1, username);
+            
+            rs = stmt.executeQuery();
+            
+            rs.next();
+            password = rs.getString(1);
+        }
+        finally
+        {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ex) {
+                logger.log(Level.WARNING, ex.getMessage(), ex);
+            }
+        }
+        
+        return password;
     }
     
     public ArrayList<String> getBookmarksOfUser(String username) throws SQLException

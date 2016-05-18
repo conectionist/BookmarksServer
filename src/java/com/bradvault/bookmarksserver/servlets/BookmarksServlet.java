@@ -13,8 +13,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -55,7 +57,30 @@ public class BookmarksServlet extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         
-        //is authenticated?
+        boolean isAuthenticated = false;
+        
+        Cookie[] cookies = request.getCookies();
+        
+        if(cookies != null)
+        {
+            for(Cookie c : cookies)
+            {
+                if(c.getName().equals("username"))
+                {
+                    isAuthenticated = true;
+                    break;
+                }
+            }
+        }
+        
+        
+        if(!isAuthenticated)
+        {
+            RequestDispatcher view = null;
+            view = request.getRequestDispatcher("401.jsp");
+            view.forward(request, response);
+            return;
+        }
         
         ArrayList<String> bookmarks = new ArrayList<>();
         

@@ -62,7 +62,8 @@ public class AuthServlet extends HttpServlet {
         {
             validateParams(request);
             verifyParams(request);
-            view = request.getRequestDispatcher("welcome.html");
+            request.setAttribute("username", request.getParameter("username"));
+            view = request.getRequestDispatcher("welcome.jsp");
             
             Cookie cookie = new Cookie("username", request.getParameter("username"));
             cookie.setMaxAge(30 * 1);
